@@ -7,21 +7,14 @@ import graphics
 from random import seed, randint
 from time import time
 
-SCREENHEIGHT = 800
-SCREENWIDTH = 1000
-
 def main():
     
     seed(time())
 
     for i in range(1, 16):
-        logic.generate_pool_ball((50 + 50 * i, 50), 
-                pygame.Color(   randint(0, 255), 
-                                randint(0, 255), 
-                                randint(0, 255)
-                            ), 
-                i)
-    graphics.init_graphics((SCREENWIDTH, SCREENHEIGHT))
+        logic.generate_pool_ball((60 + 50 * i, graphics.SCREENHEIGHT // 2), graphics.BALL_COLORS[(i - 1) % 8], i)
+
+    graphics.init_graphics()
     
     while graphics.RUNNING:
         graphics.render()
