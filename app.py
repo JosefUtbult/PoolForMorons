@@ -4,15 +4,25 @@ from logic import Pool_ball
 import pygame
 import logic
 import graphics
+from random import seed, randint
+from time import time
 
 SCREENHEIGHT = 800
 SCREENWIDTH = 1000
 
 def main():
     
-    # det_ballar_ur = Pool_ball((0, 0), pygame.Color(255, 0, 0))
-    graphics.init_graphics((SCREENWIDTH, SCREENHEIGHT))
+    seed(time())
 
+    for i in range(1, 16):
+        logic.generate_pool_ball((50 + 50 * i, 50), 
+                pygame.Color(   randint(0, 255), 
+                                randint(0, 255), 
+                                randint(0, 255)
+                            ), 
+                i)
+    graphics.init_graphics((SCREENWIDTH, SCREENHEIGHT))
+    
     while graphics.RUNNING:
         graphics.render()
 
