@@ -8,14 +8,14 @@ from random import seed, randint
 from time import time
 
 def main():
-    
+
     seed(time())
 
     for i in range(1, 16):
-        logic.generate_pool_ball((60 + 50 * i, graphics.SCREENHEIGHT // 2), graphics.BALL_COLORS[(i - 1) % 8], i)
+        Pool_ball((60 + 50 * i, graphics.SCREENHEIGHT // 2), graphics.BALL_COLORS[(i - 1) % 8], i)
 
     graphics.init_graphics()
-    
+
     while graphics.RUNNING:
         graphics.render()
 
