@@ -14,7 +14,7 @@ def main():
     seed(time())
 
     for i in range(1, 16):
-        Pool_ball([60 + 50 * i, graphics.SCREENHEIGHT // 2], graphics.BALL_COLORS[(i - 1) % 8], i)
+        Pool_ball([60 + 50 * i, graphics.SCREEN_DIM[1] // 2], graphics.BALL_COLORS[(i - 1) % 8], i)
 
     graphics.init_graphics()
 
