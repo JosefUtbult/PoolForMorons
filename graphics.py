@@ -5,14 +5,12 @@ screen = None
 font = None
 RUNNING = True
 
-SCREENHEIGHT = 800
-SCREENWIDTH = 1000
+SCREEN_DIM = (1000, 800)
 
 BALL_RADIUS = 10
 FONT_SIZE = 20
 
-TABLE_HEIGHT = 400
-TABLE_WIDTH = 800
+TABLE_DIM = (800, 400)
 TABLE_BORDER = 50
 
 BALL_COLORS = [ pygame.Color(255, 250, 54),
@@ -28,7 +26,7 @@ def init_graphics():
     global screen, font, FONT_SIZE
 
     pygame.init()
-    screen = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
+    screen = pygame.display.set_mode(SCREEN_DIM)
 
     pygame.font.init()
     font = pygame.font.SysFont('Comic Sans MS', FONT_SIZE)
@@ -73,54 +71,56 @@ def render_pool_ball(pool_ball):
                         pool_ball.position[1] - text.get_height() // 2))
 
 def render_table():
-    global screen, TABLE_WIDTH, TABLE_HEIGHT, TABLE_BORDER, SCREENWIDTH, SCREENHEIGHT
+    global screen, TABLE_DIM, TABLE_BORDER, SCREEN_DIM
 
+    # Rails
     pygame.draw.rect(
             screen,
             pygame.Color(255, 0, 0),
             pygame.Rect(
-                (SCREENWIDTH - TABLE_WIDTH - TABLE_BORDER) // 2,
-                (SCREENHEIGHT - TABLE_HEIGHT - TABLE_BORDER) // 2,
-                TABLE_WIDTH + TABLE_BORDER,
-                TABLE_HEIGHT + TABLE_BORDER
+                (SCREEN_DIM[0] - TABLE_DIM[0] - TABLE_BORDER) // 2,
+                (SCREEN_DIM[1] - TABLE_DIM[1] - TABLE_BORDER) // 2,
+                TABLE_DIM[0] + TABLE_BORDER,
+                TABLE_DIM[1] + TABLE_BORDER
             )
     )
 
+    # Bed
     pygame.draw.rect(
             screen,
-            pygame.Color(0, 255, 0),
+            pygame.Color(0, 42, 25),
             pygame.Rect(
-                (SCREENWIDTH - TABLE_WIDTH) // 2,
-                (SCREENHEIGHT - TABLE_HEIGHT) // 2,
-                TABLE_WIDTH,
-                TABLE_HEIGHT
+                (SCREEN_DIM[0] - TABLE_DIM[0]) // 2,
+                (SCREEN_DIM[1] - TABLE_DIM[1]) // 2,
+                TABLE_DIM[0],
+                TABLE_DIM[1]
             )
     )
 
     for instance in [
             (
-                (SCREENWIDTH - TABLE_WIDTH - (TABLE_BORDER // 2)) // 2,
-                (SCREENHEIGHT - TABLE_HEIGHT - (TABLE_BORDER // 2)) // 2
+                (SCREEN_DIM[0] - TABLE_DIM[0] - (TABLE_BORDER // 2)) // 2,
+                (SCREEN_DIM[1] - TABLE_DIM[1] - (TABLE_BORDER // 2)) // 2
             ),
             (
-                SCREENWIDTH // 2,
-                (SCREENHEIGHT - TABLE_HEIGHT - (TABLE_BORDER // 2)) // 2
+                SCREEN_DIM[0] // 2,
+                (SCREEN_DIM[1] - TABLE_DIM[1] - (TABLE_BORDER // 2)) // 2
             ),
             (
-                (SCREENWIDTH + TABLE_WIDTH + (TABLE_BORDER // 2)) // 2,
-                (SCREENHEIGHT - TABLE_HEIGHT - (TABLE_BORDER // 2)) // 2
+                (SCREEN_DIM[0] + TABLE_DIM[0] + (TABLE_BORDER // 2)) // 2,
+                (SCREEN_DIM[1] - TABLE_DIM[1] - (TABLE_BORDER // 2)) // 2
             ),
             (
-                (SCREENWIDTH - TABLE_WIDTH - (TABLE_BORDER // 2)) // 2,
-                (SCREENHEIGHT + TABLE_HEIGHT + (TABLE_BORDER // 2)) // 2
+                (SCREEN_DIM[0] - TABLE_DIM[0] - (TABLE_BORDER // 2)) // 2,
+                (SCREEN_DIM[1] + TABLE_DIM[1] + (TABLE_BORDER // 2)) // 2
             ),
             (
-                SCREENWIDTH // 2,
-                (SCREENHEIGHT + TABLE_HEIGHT + (TABLE_BORDER // 2)) // 2
+                SCREEN_DIM[0] // 2,
+                (SCREEN_DIM[1] + TABLE_DIM[1] + (TABLE_BORDER // 2)) // 2
             ),
             (
-                (SCREENWIDTH + TABLE_WIDTH + (TABLE_BORDER // 2)) // 2,
-                (SCREENHEIGHT + TABLE_HEIGHT + (TABLE_BORDER // 2)) // 2
+                (SCREEN_DIM[0] + TABLE_DIM[0] + (TABLE_BORDER // 2)) // 2,
+                (SCREEN_DIM[1] + TABLE_DIM[1] + (TABLE_BORDER // 2)) // 2
             ),
     ]:
         pygame.draw.circle(screen, pygame.Color(0, 0, 0), instance, int(TABLE_BORDER * 0.3))
