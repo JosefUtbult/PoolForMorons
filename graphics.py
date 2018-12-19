@@ -23,9 +23,15 @@ BALL_COLORS = [ pygame.Color(255, 250, 54),
                 pygame.Color(50, 50, 50)]
 
 def init_graphics():
-    global screen, font, FONT_SIZE
+    global screen, font, FONT_SIZE, SCREEN_DIM
 
     pygame.init()
+
+    try:
+        SCREEN_DIM = pygame.display.list_modes()[0]
+    except:
+        pass
+
     screen = pygame.display.set_mode(SCREEN_DIM)
 
     pygame.font.init()
