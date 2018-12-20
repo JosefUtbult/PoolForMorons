@@ -108,10 +108,13 @@ def generate_sphere():
 
     nodes.append([Node((origin[0], origin[1] - overall_radius, origin[2]))])
 
-    for i in range(1, nr_of_layers - 1):
+    for i in range(1, nr_of_layers):
 
-        nodes.append(generate_circle_xz((origin[0], floor(origin[1] + i * (overall_radius * 2 / nr_of_layers) - overall_radius), origin[2]), 
-                                        calculate_radius(overall_radius, nr_of_layers, i),
+        pos_y = floor(origin[1] + i * (overall_radius * 2 / nr_of_layers) - overall_radius) 
+        radius = calculate_radius(overall_radius, nr_of_layers, i if i < nr_of_layers // 2 else i - 1)
+        
+        nodes.append(generate_circle_xz((origin[0], pos_y, origin[2]), 
+                                        radius,
                                         instance_ratio))
     
     
