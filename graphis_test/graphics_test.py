@@ -1,25 +1,61 @@
 import pygame
-from math import pi, sin, cos, radians, sqrt, floor
+from math import pi, sin, cos, radians, sqrt, floor, atan
 
 screen = None
+overall_radius = 200
+instance_ratio = 0.02
+nr_of_layers = 20
+
+origin = (400, 400, 400)
+
 
 def main():
 
     init_graphics()
+    
+    spheres = [Sphere((origin[0] + i * 500, origin[1], origin[2]), pygame.Color(0, int(255 * i / 3), 255 - int(255 * i / 3))) for i in range(1)]
+    
+    for sphere in spheres:
+        sphere.render(screen)
 
-    render()
+    for node in Node.all_nodes:
+        print(node.angle)
+
+    pygame.draw.circle(screen, pygame.Color(255, 0, 0), (400, 400), 3)
+    pygame.display.flip()
 
     print("Done")
 
     while check_quit():
         pass
 
-class Pool_ball:
+class Sphere:
 
-    def __init__(self, color, nodes, edges):
-        self.color = color
-        self.edges = edges
+    def __init__(self, origin, color):
+        temp = generate_sphere(origin, color)
+        self.nodes = temp[0]
+        self.polygons = temp[1]
+        self.position = origin[:]
+
+    def render(self, screen):
+        
+        for polygon in self.polygons:
+
+            color_data = []
+
+            for i in range(3):
+                color_data.append(int((polygon.nodes[0].position[i] - self.position[i] + overall_radius) * 255 / (overall_radius * 2)))
+
+            pygame.draw.polygon(screen, pygame.Color(color_data[0], color_data[1], color_data[2]), [node.position[:2] for node in polygon.nodes], 1)
+    
+    
+
+
+class Polygon:
+
+    def __init__(self, nodes, color):
         self.nodes = nodes
+        self.color = color
 
 
 class Edge:
@@ -32,13 +68,17 @@ class Edge:
 
 
 class Node:
-    def __init__(self, position):
+
+    all_nodes = []
+
+    def __init__(self, position, angle):
 
         self.position = position
-
+        self.angle = angle
+        Node.all_nodes.append(self)
 
 def init_graphics():
-    global screen
+    global screen, origin
    
     pygame.init() 
 
@@ -53,113 +93,98 @@ def init_graphics():
     screen = pygame.display.set_mode(dimension)
 
 
-#    nodes = [   Node((100, 100, 0)), 
-#                Node((200, 100, 0)), 
-#                Node((200, 200, 0)), 
-#                Node((100, 200, 0)),
-#                Node((150, 150, 100)),
-#                Node((250, 150, 100)),
-#                Node((250, 250, 100)),
-#                Node((150, 250, 100))]
+def generate_sphere(origin, color):
+    global nr_of_layers, overall_radius, instance_ratio
 
-#    edges = [   Edge((nodes[0], nodes[1])), 
-#                Edge((nodes[1], nodes[2])), 
-#                Edge((nodes[2], nodes[3])), 
-#                Edge((nodes[3], nodes[0])),
-#                Edge((nodes[4], nodes[5])),
-#                Edge((nodes[5], nodes[6])),
-#                Edge((nodes[6], nodes[7])),
-#                Edge((nodes[7], nodes[4])),
-#                Edge((nodes[0], nodes[4])),
-#                Edge((nodes[1], nodes[5])),
-#                Edge((nodes[2], nodes[6])),
-#                Edge((nodes[3], nodes[7]))] 
-
-
-    # pool_ball = Pool_ball(pygame.Color(255, 255, 255), nodes, edges)
-    generate_sphere()
-
-
-def render():
-    global screen
-
-    for edge in Edge.all_edges:
-
-        temp = int((edge.nodes[0].position[2] - 200) * 255 / 400)
-        pygame.draw.line(   screen, pygame.Color(temp, 255 - temp, int(255 * ((len(Edge.all_edges) - Edge.all_edges.index(edge) ) / len(Edge.all_edges)))), 
-                            edge.nodes[0].position[:2], 
-                            edge.nodes[1].position[:2],
-                            1)
-    
-    pygame.draw.circle(screen, pygame.Color(255, 0, 0), (400, 400), 3)
-    pygame.display.flip() 
-    
-
-def generate_sphere():
-    
-    origin = (400, 400, 400)
-    overall_radius = 200
     overall_circumference = overall_radius * 2 * pi
-    instance_ratio = 0.02
-    nr_of_layers = 20
     nodes = []
-    edges = []
+    polygons = []
 
+    position = (origin[0], origin[1] - overall_radius, origin[2])
 
-    nodes.append([Node((origin[0], origin[1] - overall_radius, origin[2]))])
+    nodes.append([Node(position, calculate_angle(origin, position))])
 
     for i in range(1, nr_of_layers):
 
         pos_y = floor(origin[1] + i * (overall_radius * 2 / nr_of_layers) - overall_radius) 
         radius = calculate_radius(overall_radius, nr_of_layers, i if i < nr_of_layers // 2 else i - 1)
         
-        nodes.append(generate_circle_xz((origin[0], pos_y, origin[2]), 
+        nodes.append(generate_circle_xz((origin[0], pos_y, origin[2]),
+                                        origin,
                                         radius,
                                         instance_ratio))
     
     
-    nodes.append([Node((origin[0], origin[1] + overall_radius, origin[2]))])
+    nodes.append([Node((origin[0], origin[1] + overall_radius, origin[2]), calculate_angle(origin, (origin[0], origin[1] + overall_radius, origin[2])))])
 
 
 
-    for y in range(len(nodes)):
-        for i in range(len(nodes[y])):
-            edges.append(Edge((nodes[y][i], nodes[y][(i + 1) % len(nodes[y])])))
-
-            if y < len(nodes) - 1:
-                
-                if len(nodes[y]) > len(nodes[y + 1]):
-                    append_edges(nodes[y], nodes[y + 1], edges)
-
-                else:
-                    append_edges(nodes[y + 1], nodes[y], edges)
+    for y in range(len(nodes) - 1):
+        for i in range(max(len(nodes[y]), len(nodes[y + 1]))):
+            
+            polygons.append(Polygon(calculate_polygon(nodes, y, i, True), color))
+            polygons.append(Polygon(calculate_polygon(nodes, y, i, False), color))
+            
+    return (nodes, polygons)
 
 
-def append_edges(layer_max, layer_min, edges):
+def calculate_angle(origin, position):
 
-    for i in range(len(layer_max)):
+    angle = []
+
+    for i in [0, 2]:
         
-        try:
-            edges.append(Edge((layer_max[i], layer_min[int(i * len(layer_min) / len(layer_max))])))
-        except IndexError as e:
-            print(len(layer_max), '\n', len(layer_min))
+        if position[i] - origin[i] != 0:
+            print(((position[1], origin[1]), (position[i], origin[i])))
+            angle.append(atan((position[1] - origin[1]) / (position[i] - origin[i])))
+
+        else:
+            angle.append(pi / 2)
+
+    return angle
+
+
+def calculate_polygon(nodes, y, i, mode=True):
+    out = []
+
+    if len(nodes[y]) > len(nodes[y + 1]):
+        layer_max = nodes[y]
+        layer_min = nodes[y + 1]
+
+    else:
+        layer_max = nodes[y + 1]
+        layer_min = nodes[y]
+
+
+    out.append(layer_max[i])
+    
+    if mode:
+        out.append(layer_max[(i + 1) % len(nodes[y])])
+
+    else:
+        out.append(layer_min[int(i * len(layer_min) / len(layer_max))])
+
+    out.append(layer_min[(int(i * len(layer_min) / len(layer_max)) + 1) % len(layer_min)])
+    
+    return out
+
 
 def calculate_radius(overall_radius, nr_of_layers, i):
 
     return sqrt(pow(overall_radius, 2) - pow((( abs(i - ((nr_of_layers - 1) / 2))) * overall_radius * 4) / ((nr_of_layers - 1) * 2), 2))
 
-def generate_circle_xz(origin, radius, instance_ratio):
+def generate_circle_xz(position, origin, radius, instance_ratio):
     nodes = []
     circumference = int(radius * 2 * pi)
 
     for n in range(int(circumference * instance_ratio)):
       
-        posz = calculate_position(sin, n / (instance_ratio * circumference), radius, origin[2])
-        posx = calculate_position(cos, n / (instance_ratio * circumference), radius, origin[0])
+        posz = calculate_position(sin, n / (instance_ratio * circumference), radius, position[2])
+        posx = calculate_position(cos, n / (instance_ratio * circumference), radius, position[0])
         
         # print((n * 3600) / circumference)
 
-        nodes.append(Node((posx, origin[1], posz)))
+        nodes.append(Node((posx, position[1], posz), calculate_angle(origin, (posx, position[1], posz))))
     
     return nodes
 
