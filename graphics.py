@@ -7,7 +7,6 @@ RUNNING = True
 
 SCREEN_DIM = (1000, 800)
 
-BALL_RADIUS = 10
 FONT_SIZE = 20
 
 TABLE_DIM = (800, 400)
@@ -27,10 +26,10 @@ def init_graphics():
 
     pygame.init()
 
-    try:
-        SCREEN_DIM = pygame.display.list_modes()[0]
-    except:
-        pass
+#   try:
+#       SCREEN_DIM = pygame.display.list_modes()[0]
+#   except:
+#       pass
 
     screen = pygame.display.set_mode(SCREEN_DIM)
 
@@ -54,19 +53,19 @@ def render():
 
 def render_pool_ball(pool_ball):
 
-    global screen, font, BALL_RADIUS, FONT_SIZE
+    global screen, font, FONT_SIZE
 
     pygame.draw.circle( screen,
                         pool_ball.color,
                         pool_ball.position,
-                        BALL_RADIUS
+                        logic.Pool_ball.radius
                       )
 
     if pool_ball.number > 8:
         pygame.draw.circle( screen,
                             pygame.Color(255, 255, 255),
                             pool_ball.position,
-                            int(BALL_RADIUS * 0.6)
+                            int(logic.Pool_ball.radius * 0.6)
                            )
 
     text = font.render( str(pool_ball.number),
