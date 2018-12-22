@@ -1,33 +1,35 @@
 import pygame
-from math import pi, sin, cos, radians, sqrt, floor, atan
-
+from math import pi, sin, cos, tan, radians, sqrt, floor, atan
+from time import sleep
 screen = None
 overall_radius = 200
 instance_ratio = 0.02
 nr_of_layers = 20
 
+triangle_length = 10
+
 origin = (400, 400, 400)
 
 
 def main():
-
+    global screen
     init_graphics()
     
-    spheres = [Sphere((origin[0] + i * 500, origin[1], origin[2]), pygame.Color(0, int(255 * i / 3), 255 - int(255 * i / 3))) for i in range(1)]
-    
-    for sphere in spheres:
-        sphere.render(screen)
-
-    for node in Node.all_nodes:
-        print(node.angle)
-
-    pygame.draw.circle(screen, pygame.Color(255, 0, 0), (400, 400), 3)
-    pygame.display.flip()
+    spheres = [Sphere((origin[0] + i * 500, origin[1], origin[2]), pygame.Color(0, int(255 * i / 3), 255 - int(255 * i / 3))) for i in range(1)] 
 
     print("Done")
 
+    #spheres[0].move((1, 0, 0))
     while check_quit():
-        pass
+      
+        screen.fill(pygame.Color(0, 0, 0))
+        for sphere in spheres:
+            sphere.render(screen)
+
+        pygame.draw.circle(screen, pygame.Color(255, 0, 0), (400, 400), 3)
+        pygame.display.flip()
+        sleep(1)
+        
 
 class Sphere:
 
@@ -44,11 +46,17 @@ class Sphere:
             color_data = []
 
             for i in range(3):
-                color_data.append(int((polygon.nodes[0].position[i] - self.position[i] + overall_radius) * 255 / (overall_radius * 2)))
-
+                color_data.append(int((polygon.nodes[0].position[i] - self.position[i] + overall_radius) * 255 / (overall_radius * 2)) % 255)
             pygame.draw.polygon(screen, pygame.Color(color_data[0], color_data[1], color_data[2]), [node.position[:2] for node in polygon.nodes], 1)
     
-    
+    def move(self, new_position):
+        global overall_radius
+
+        for node_list in self.nodes:
+            for node in node_list:
+                node.angle = (cos(radians(360 * new_position[0] / (overall_radius * 2 * pi)) + node.angle[0]), node.angle[1])
+                node.position = (node.angle[0] * overall_radius * sin(node.position[1] - self.position[0]) + node.position[0], node.position[1], node.position[2]) 
+                 
 
 
 class Polygon:
@@ -56,16 +64,6 @@ class Polygon:
     def __init__(self, nodes, color):
         self.nodes = nodes
         self.color = color
-
-
-class Edge:
-
-    all_edges = []
-
-    def __init__(self, nodes):
-        self.nodes = nodes
-        Edge.all_edges.append(self)
-
 
 class Node:
 
@@ -94,6 +92,29 @@ def init_graphics():
 
 
 def generate_sphere(origin, color):
+    global overall_radius, nr_of_layers
+
+    overall_circumference = overall_radius * 2 * pi
+
+    nodes = []
+
+    position = [origin[0], origin[1] - overall_radius, origin[2]]
+    nodes.append([Node(position, calculate_angle(position, origin))])
+
+    for y in range(1, nr_of_layers):
+        
+        nodes.append([])
+        radius = (overall_radius * (nr_of_layers - 2) / nr_of_layers) - abs((nr_of_layers / 2) - y) * overall_radius * 2 / nr_of_layers
+        
+        for instance in range(nr_of_layers):
+            position = [cos(instance * radius * 2 * pi / nr_of_layers)]
+            print(position, radius)
+
+    nodes = []
+    polygons = []
+
+
+def generate_sphere_1(origin, color):
     global nr_of_layers, overall_radius, instance_ratio
 
     overall_circumference = overall_radius * 2 * pi
@@ -135,7 +156,6 @@ def calculate_angle(origin, position):
     for i in [0, 2]:
         
         if position[i] - origin[i] != 0:
-            print(((position[1], origin[1]), (position[i], origin[i])))
             angle.append(atan((position[1] - origin[1]) / (position[i] - origin[i])))
 
         else:
