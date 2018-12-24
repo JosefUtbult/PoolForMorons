@@ -29,10 +29,8 @@ def main():
     
         spheres[0].move([delta * 2, delta])
 
-        if spheres[0].position[0] >= 1000:
-            delta = -1
-        elif spheres[0].position[0] <= 400:
-            delta = 1
+        if spheres[0].position[0] >= 1000 or spheres[0].position[0] <= 400:
+            delta = delta * -1
         
 
 class Sphere:
@@ -42,6 +40,7 @@ class Sphere:
         self.nodes = temp[0]
         self.polygons = temp[1]
         self.position = origin[:]
+        self.origin = origin[:]
 
     def render(self, screen):
         
@@ -52,40 +51,24 @@ class Sphere:
             else:
                 pygame.draw.polygon(screen, polygon.color, [(polygon.nodes[i].position[0] + self.position[0], polygon.nodes[i].position[1] + self.position[1]) for i in range(len(polygon.nodes))])
             
-            if polygon is self.polygons[0]:
-                print(polygon.nodes[0].position[2])
 
     def move(self, distance):
         global overall_radius
 
-        angle = [distance[i] / overall_radius for i in range(2)]
-        
-        for y in range(len(self.nodes)):
-
-            for node in self.nodes[y]:
-                node.position[0] = cos(angle[0]) * node.position[0] - sin(angle[0]) * node.position[1]
-                
-                node.position[1] = sin(angle[0]) * node.position[0] + cos(angle[0]) * node.position[1]
-                node.position[1] = sin(angle[1]) * node.position[2] + cos(angle[1]) * node.position[1]
-                
-                node.position[2] = cos(angle[1]) * node.position[2] - sin(angle[1]) * node.position[1]
-               
-                #if sqrt(pow(node.position[0], 2) + pow(node.position[1], 2) + pow(node.position[2], 2)) < overall_radius:
-                #
-                #    temp = abs(node.position[0]) + abs(node.position[1]) + abs(node.position[2])
-                #    
-                #    for i in range(3):
-                #        
-                #        node.position[i] += node.position[i] / temp
-                #
-                #            self.position[0] += distance[0]
-        
-
         self.position[0] += distance[0]
         self.position[1] += distance[1]
        
+        angle = [(self.position[i] - self.origin[i]) / overall_radius for i in range(2)]
+        print(angle) 
+        for y in range(len(self.nodes)):
 
-
+            for node in self.nodes[y]:
+                node.position[0] = cos(angle[0]) * node.origin[0] - sin(angle[0]) * node.origin[1]
+                
+                node.position[1] = sin(angle[1]) * node.origin[2] + cos(angle[1]) * (sin(angle[0]) * node.origin[0] + cos(angle[0]) * node.origin[1])
+                
+                node.position[2] = cos(angle[1]) * node.origin[2] - sin(angle[1]) * node.origin[1]
+               
 
 class Polygon:
 
@@ -100,6 +83,7 @@ class Node:
     def __init__(self, position, angle):
 
         self.position = position
+        self.origin = position[:]
         self.angle = angle
         Node.all_nodes.append(self)
 
