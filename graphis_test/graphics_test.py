@@ -1,21 +1,34 @@
 import pygame
-from math import pi, sin, cos, tan, radians, degrees, sqrt, floor, atan
+from math import pi, sin, cos, tan, atan2, radians, degrees, sqrt, floor, atan
 from time import sleep
 screen = None
-overall_radius = 200
-nr_of_layers = 10
+overall_radius = 50
+nr_of_layers = 20
 
-origin = [400, 400]
-solid = False
+origin = [200, 200]
+solid = True
 
+ivory = pygame.Color(238, 238, 224)
 def main():
     global screen
     init_graphics()
     
     spheres = [Sphere(origin, pygame.Color(0, int(255 * i / 3), 255 - int(255 * i / 3))) for i in range(1)] 
+    
+    spheres[0].polygons[len(spheres[0].polygons) // 2].color = pygame.Color(255, 0, 0)
 
     print("Done")
     
+    temp = sort_layers(spheres[0].polygons)
+
+    #for polygon in spheres[0].polygons:
+    #    print(min([node.position[2] for node in polygon.nodes]))
+    
+    #print('--------------------------------------------------')
+
+    #for polygon in temp:
+    #    print(min([node.position[2] for node in polygon.nodes]))
+
     delta = 1
 
     while check_quit():
@@ -24,14 +37,17 @@ def main():
         for sphere in spheres:
             sphere.render(screen)
 
-        pygame.draw.circle(screen, pygame.Color(255, 0, 0), spheres[0].position[:2], 3)
+        #pygame.draw.circle(screen, pygame.Color(255, 0, 0), spheres[0].position[:2], 3)
         pygame.display.flip()
     
-        spheres[0].move([delta * 2, delta])
+        spheres[0].move([delta, delta])
 
-        if spheres[0].position[0] >= 1000 or spheres[0].position[0] <= 400:
+        if spheres[0].position[0] >= 500 or spheres[0].position[0] <= 200:
             delta = delta * -1
         
+        print(spheres[0].polygons[0].nodes[0].position[2], spheres[0].polygons[-1].nodes[0].position[2])
+        #sleep(0.1)
+
 
 class Sphere:
 
@@ -41,15 +57,19 @@ class Sphere:
         self.polygons = temp[1]
         self.position = origin[:]
         self.origin = origin[:]
-
+    
     def render(self, screen):
+       
+        temp = sort_layers(self.polygons)
         
-        for polygon in self.polygons:
+        for polygon in temp:
+            
+            #polygon.color = pygame.Color(0, 0, int(255 * (min([node.position[2] for node in polygon.nodes]) + overall_radius) / (overall_radius * 2)))
 
             if not solid:
                 pygame.draw.polygon(screen, polygon.color, [(int(polygon.nodes[i].position[0] + self.position[0]), int(polygon.nodes[i].position[1] + self.position[1])) for i in range(len(polygon.nodes))], 1)
             else:
-                pygame.draw.polygon(screen, polygon.color, [(polygon.nodes[i].position[0] + self.position[0], polygon.nodes[i].position[1] + self.position[1]) for i in range(len(polygon.nodes))])
+                pygame.draw.polygon(screen, polygon.color, [(int(polygon.nodes[i].position[0] + self.position[0]), int(polygon.nodes[i].position[1] + self.position[1])) for i in range(len(polygon.nodes))])
             
 
     def move(self, distance):
@@ -57,18 +77,33 @@ class Sphere:
 
         self.position[0] += distance[0]
         self.position[1] += distance[1]
-       
-        angle = [(self.position[i] - self.origin[i]) / overall_radius for i in range(2)]
-        print(angle) 
-        for y in range(len(self.nodes)):
+            
+        if self.position[0] == self.origin[0] and self.position[1] == self.origin[1]:
+            for node_list in self.nodes:
+                for node in node_list:
+                    node.position = node.origin[:]
 
-            for node in self.nodes[y]:
-                node.position[0] = cos(angle[0]) * node.origin[0] - sin(angle[0]) * node.origin[1]
-                
-                node.position[1] = sin(angle[1]) * node.origin[2] + cos(angle[1]) * (sin(angle[0]) * node.origin[0] + cos(angle[0]) * node.origin[1])
-                
-                node.position[2] = cos(angle[1]) * node.origin[2] - sin(angle[1]) * node.origin[1]
-               
+        else:
+
+            #angle_z = atan2(self.origin[1] - self.position[1], self.origin[0] - self.origin[0])
+            #angle_y = sqrt(pow(self.origin[1] - self.position[1], 2) + pow(self.origin[0] - self.origin[0], 2)) / overall_radius
+             
+            angle_y = (self.position[0] - self.origin[0]) / overall_radius
+            angle_x = (self.position[1] - self.origin[1]) / overall_radius
+
+            a = cos(angle_x)
+            b = sin(angle_x)
+            c = cos(angle_y)
+            d = sin(angle_y)
+
+            for node_list in self.nodes:
+
+                for node in node_list:
+
+                    node.position[0] = c * node.origin[0] + d * node.origin[2]
+                    node.position[1] = -b * d * node.origin[0] -  a * node.origin[1] + b * c * node.origin[2]
+                    node.position[2] = -a * d * node.origin[0] + b * node.origin[1] + a * c * node.origin[2]
+
 
 class Polygon:
 
@@ -94,17 +129,17 @@ def init_graphics():
 
     dimension = (1000, 800)
 
-    try:
-        dimension = pygame.display.list_modes()[0]
-    
-    except:
-        pass
+    #try:
+    #    dimension = pygame.display.list_modes()[0]
+    #
+    #except:
+    #    pass
 
     screen = pygame.display.set_mode(dimension)
 
 
 def generate_sphere(color):
-    global overall_radius, nr_of_layers
+    global overall_radius, nr_of_layers, ivory
 
     overall_circumference = overall_radius * 2 * pi
 
@@ -131,13 +166,13 @@ def generate_sphere(color):
         for i in range(max(len(nodes[y]), len(nodes[y + 1]))):
 
             if len(nodes[y]) <= 1:
-                polygons.append(Polygon([nodes[y][0], nodes[y + 1][i], nodes[y + 1][(i + 1) % len(nodes[y + 1])]], color))
+                polygons.append(Polygon([nodes[y][0], nodes[y + 1][i], nodes[y + 1][(i + 1) % len(nodes[y + 1])]], pygame.Color(255, 0, 0)))
             
             elif len(nodes[y + 1]) <= 1:
-                polygons.append(Polygon([nodes[y][i], nodes[y][(i + 1) % len(nodes[y + 1])], nodes[y + 1][0]], color))
+                polygons.append(Polygon([nodes[y][i], nodes[y][(i + 1) % len(nodes[y])], nodes[y + 1][0]], pygame.Color(255, 0, 0)))
             
             else:
-                polygons.append(Polygon([nodes[y][i], nodes[y + 1][i], nodes[y + 1][(i + 1) % len(nodes[y + 1])], nodes[y][(i + 1) % len(nodes[y])]], color)) 
+                polygons.append(Polygon([nodes[y][i], nodes[y + 1][i], nodes[y + 1][(i + 1) % len(nodes[y + 1])], nodes[y][(i + 1) % len(nodes[y])]], pygame.Color(0, 255 - int(255 * y / nr_of_layers), int(255 * y / nr_of_layers))))#ivory if y > int(nr_of_layers * 0.35) and y < int(nr_of_layers * 0.6) else color)) 
 
     return (nodes, polygons)
 
@@ -153,6 +188,11 @@ def calculate_angle(position):
             angle.append(pi / 2)
 
     return angle
+
+
+def sort_layers(polygons):
+    
+    return sorted(polygons, key = lambda i: min([node.position[2] for node in i.nodes]))
 
 def check_quit():
 
