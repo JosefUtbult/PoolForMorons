@@ -10,21 +10,33 @@
 # Input all three before result is visible.
 
 import pygame
-from math import cos, sin, atan2, radians
+from math import cos, sin, atan2, radians, degrees, sqrt
 
 SCREEN = None
 FONT = None
 RUNNING = True
 
-BALL_VARS = {
-        "vel" : 0.0,
-        "ang" : 0.0
-}
-
 RADIUS = 200
 SCREEN_DIM = (1200, 600)
 
 FONT_SIZE = 20
+
+BALL_VARS = {
+        "vel" : 0.0,
+        "ang" : 0.0,
+        "pos" : (SCREEN_DIM[0] // 2, SCREEN_DIM[1] // 2)
+}
+
+COLL_VARS = {
+        "vel" : 0.0,
+        "ang" : 0.0,
+        "rel_ang" : 0.0,
+        "pos" : (SCREEN_DIM[0] // 2 + RADIUS * 2, SCREEN_DIM[1] // 2)
+}
+
+# TODO TEMP
+HIT_TEMP = (424, 242)
+ANG_TEMP = 120
 
 def main():
     global RUNNING
@@ -32,6 +44,9 @@ def main():
     init()
 
     while RUNNING:
+
+        get_collision()
+
         render()
 
 
@@ -54,21 +69,19 @@ def render():
 
     SCREEN.fill(pygame.Color(0, 0, 0))
 
-    main_ball()
+    balls()
 
     pygame.display.flip()
 
 
-def main_ball():
+def balls():
     global  SCREEN, SCREEN_DIM, \
-            RADIUS, BALL_VARS
-
-    ball_point = (SCREEN_DIM[0] // 2, SCREEN_DIM[1] // 2)
+            RADIUS, BALL_VARS, COLL_VARS
 
     pygame.draw.circle(
             SCREEN,
             pygame.Color(150, 150, 150),
-            ball_point,
+            BALL_VARS["pos"],
             RADIUS,
             3
     )
@@ -77,13 +90,62 @@ def main_ball():
     pygame.draw.line(
             SCREEN,
             pygame.Color(50, 150, 50),
-            ball_point,
+            BALL_VARS["pos"],
             (
-                ball_point[0] + round(RADIUS * cos(BALL_VARS["ang"])),
-                ball_point[1] + round(RADIUS * sin(BALL_VARS["ang"]))
+                BALL_VARS["pos"][0] + round(RADIUS * cos(BALL_VARS["ang"])),
+                BALL_VARS["pos"][1] + round(RADIUS * sin(BALL_VARS["ang"]))
             ),
             5
     )
+
+    COLL_VARS["pos"] = (
+            round(2 * RADIUS * cos(radians(COLL_VARS["rel_ang"]))) + BALL_VARS["pos"][0],
+            round(2 * RADIUS * sin(radians(COLL_VARS["rel_ang"]))) + BALL_VARS["pos"][1]
+    )
+
+    pygame.draw.circle(
+            SCREEN,
+            pygame.Color(150, 50, 50),
+            COLL_VARS["pos"],
+            RADIUS,
+            3
+    )
+
+    pygame.draw.line(
+            SCREEN,
+            pygame.Color(150, 50, 50),
+            COLL_VARS["pos"],
+            (
+                COLL_VARS["pos"][0] + round(RADIUS * cos(COLL_VARS["ang"])),
+                COLL_VARS["pos"][1] + round(RADIUS * sin(COLL_VARS["ang"]))
+            ),
+            5
+    )
+
+def get_collision():
+    global SCREEN_DIM
+
+    mouse_pos = pygame.mouse.get_pos()
+
+    mouse_pressed = pygame.mouse.get_pressed()
+
+    if mouse_pressed[0]:
+        COLL_VARS["rel_ang"] = 90 - degrees(atan2(
+            mouse_pos[0] - BALL_VARS["pos"][0],
+            mouse_pos[1] - BALL_VARS["pos"][1]
+        ))
+
+    else:
+        COLL_VARS["ang"] = 90 - degrees(atan2(
+            mouse_pos[0] - BALL_VARS["pos"][0],
+            mouse_pos[1] - BALL_VARS["pos"][1]
+        ))
+        COLL_VARS["vel"] = sqrt(mouse_pos[0] ** 2 + mouse_pos[1] ** 2)
+
+        if mouse_pressed[2]:
+            COLL_VARS["vel"]
+
+    print(mouse_pos, COLL_VARS["rel_ang"], COLL_VARS["ang"], " "*13, end="\r")
 
 
 def check_quit():
