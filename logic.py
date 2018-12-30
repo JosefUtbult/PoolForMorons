@@ -1,5 +1,5 @@
 import pygame
-from math import cos, sin, degrees
+from math import cos, sin, sqrt, atan2, radians
 
 PHYS_TABLE_DIM = (2.70, 1.35) # TODO necessary?
 MOVING_PARTICLES = []
@@ -13,20 +13,19 @@ class Particle:
                 ):
 
         self.position = position
-        self.extremities = []
 
         # TODO remove this
         self.fys_pos = [float(position[0]), float(position[1])]
         self.velocity = 0.0
         self.acceleration = 0.0
 
+        self.angle = 0.0
+
         self.direction = [0.0, 0.0]
 
         self.mass = mass
 
         self.fric_coeff = fric_coeff
-
-        self.init_extremities()
 
         self.colliding = False
 
@@ -37,10 +36,12 @@ class Particle:
             global MOVING_PARTICLES
             MOVING_PARTICLES.append(self)
 
+        self.angle = angle
+
         self.acceleration = magnitude / self.mass
 
-        self.direction[0] = sin(degrees(angle))
-        self.direction[1] = cos(degrees(angle))
+        self.direction[0] = sin(angle)
+        self.direction[1] = cos(angle)
 
     def apply_acceleration(self, magnitude: float, angle: float):
 
@@ -50,8 +51,8 @@ class Particle:
 
         self.acceleration = magnitude
 
-        self.direction[0] = sin(degrees(angle))
-        self.direction[1] = cos(degrees(angle))
+        self.direction[0] = sin(angle)
+        self.direction[1] = cos(angle)
 
     def move(self):
         self.velocity += self.acceleration
@@ -61,8 +62,6 @@ class Particle:
         self.position[0] = round(self.fys_pos[0])
         self.position[1] = round(self.fys_pos[1])
 
-        self.set_extremities()
-
         self.acceleration = -(self.mass * self.fric_coeff)
 
         if self.velocity <= 0.0:
@@ -70,15 +69,31 @@ class Particle:
             self.velocity = 0.0
             self.acceleration = 0.0
 
-    def collide_with(self, other):
-        #TODO
-        pass
+    def check_collision(self, other):
+        if self.position == other.position:
+            self.collide_with(
+                    other,
+                    atan2(
+                        (self.position[0] - other.position[0]),
+                        (self.position[1] - other.position[1])
+                    )
+            )
 
-    def set_extremities(self):
-        self.extremities[0] = self.position
+    def collide_with(self, other, collision_angle, master=True):
+#        if collision_angle is None:
+#            collision_angle = atan2(point[0] - self.position[0], point[1] - self.position[1])
 
-    def init_extremities(self):
-        self.extremities = [self.position]
+        velocity_x  = other.velocity * cos(other.angle - collision_angle) * cos(collision_angle) \
+                    + self.velocity * sin(self.angle - collision_angle) * cos(collision_angle + radians(90))
+
+        velocity_y  = other.velocity * cos(other.angle - collision_angle) * sin(collision_angle) \
+                    + self.velocity * sin(self.angle - collision_angle) * sin(collision_angle + radians(90))
+
+        self.angle = atan2(velocity_x, velocity_y)
+        self.velocity = sqrt( velocity_x ** 2 + velocity_y ** 2 )
+
+        if master:
+            other.collide_with(self, collision_angle, False)
 
 
 class Pool_ball(Particle):
@@ -102,34 +117,41 @@ class Pool_ball(Particle):
 
         Pool_ball.pool_balls.append(self)
 
-    def collide_with(self, other):
+    def check_collision(self, other):
+        if self is other:
+            return
+        distance = sqrt(
+                (self.fys_pos[0] - other.fys_pos[0]) ** 2 \
+                + (self.fys_pos[1] - other.fys_pos[1]) ** 2
+            )
 
-        if self.velocity > 0.0 and other.velocity > 0.0:
-            other_pre_v = other.velocity
-            #TODO
-            #Pool_ball.
-        
-        if self.velocity > 0.0:
-            other.velocity = self.velocity * 1
-        pass
+        if distance <= Pool_ball.radius:
+            print(self.number, other.number)
+            self.collide_with(
+                    other,
+                    atan2(
+                        (self.position[0] - other.position[0]),
+                        (self.position[1] - other.position[1])
+                    )
+            )
 
-    def init_extremities(self):
-        self.extremities = [
-                [self.position[0] - Pool_ball.radius, self.position[1]],
-                [self.position[0] + Pool_ball.radius, self.position[1]],
-                [self.position[0], self.position[1] - Pool_ball.radius],
-                [self.position[0], self.position[1] + Pool_ball.radius]
-        ]
+    def collide_with(self, other, collision_angle, master=True):
 
-    def set_extremities(self):
-        self.extremities[0][0] = self.position[0] - Pool_ball.radius
-        self.extremities[0][1] = self.position[1]
+        velocity_x  = other.velocity * cos(other.angle - collision_angle) * cos(collision_angle) \
+                    + self.velocity * sin(self.angle - collision_angle) * cos(collision_angle + radians(90))
 
-        self.extremities[1][0] = self.position[0] + Pool_ball.radius
-        self.extremities[1][1] = self.position[1]  
+        velocity_y  = other.velocity * cos(other.angle - collision_angle) * sin(collision_angle) \
+                    + self.velocity * sin(self.angle - collision_angle) * sin(collision_angle + radians(90))
 
-        self.extremities[2][0] = self.position[0] 
-        self.extremities[2][1] = self.position[1] - Pool_ball.radius 
-        self.extremities[3][0] = self.position[0] 
-        self.extremities[3][1] = self.position[1] + Pool_ball.radius
+        if master:
+            other.collide_with(self, collision_angle, False)
+
+        self.angle = atan2(velocity_x, velocity_y)
+        self.direction[0] = sin(self.angle)
+        self.direction[1] = cos(self.angle)
+        self.velocity = sqrt( velocity_x ** 2 + velocity_y ** 2 )
+
+        if self.acceleration == 0.0 and self.velocity == 0.0:
+            global MOVING_PARTICLES
+            MOVING_PARTICLES.append(self)
 

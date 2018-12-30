@@ -10,7 +10,7 @@
 # Input all three before result is visible.
 
 import pygame
-from math import cos, sin, atan2, acos, radians, degrees, sqrt
+from math import cos, sin, atan2, tan, radians, degrees, sqrt
 
 SCREEN = None
 FONT = None
@@ -37,7 +37,6 @@ COLL_VARS = {
 }
 
 
-HIT_ANGLE = 0.0
 # TODO TEMP
 HIT_TEMP = (424, 242)
 ANG_TEMP = 120
@@ -143,7 +142,7 @@ def balls():
     )
 
 def get_collision():
-    global SCREEN_DIM, COLLIDED, HIT_ANGLE
+    global SCREEN_DIM, COLLIDED
 
     mouse_pos = pygame.mouse.get_pos()
 
@@ -167,22 +166,35 @@ def get_collision():
                         (mouse_pos[1] - COLL_VARS["pos"][1]) ** 2
                     )
 
-#           HIT_ANGLE = acos(1 - ())
-
-            HIT_ANGLE = BALL_VARS["ang"] - COLL_VARS["rel_ang"]
-
             COLLIDED = True
+
+            ball_vx = COLL_VARS["vel"] * \
+                    cos(radians(COLL_VARS["ang"] - COLL_VARS["rel_ang"])) * \
+                    cos(radians(COLL_VARS["rel_ang"])) + \
+                    BALL_VARS["vel"] * \
+                    sin(radians(BALL_VARS["ang"] - COLL_VARS["rel_ang"])) * \
+                    cos(radians(COLL_VARS["rel_ang"] + 90))
+
+            ball_vy = COLL_VARS["vel"] * \
+                    cos(radians(COLL_VARS["ang"] - COLL_VARS["rel_ang"])) * \
+                    sin(radians(COLL_VARS["rel_ang"])) + \
+                    BALL_VARS["vel"] * \
+                    sin(radians(BALL_VARS["ang"] - COLL_VARS["rel_ang"])) * \
+                    sin(radians(COLL_VARS["rel_ang"] + 90))
+
+            BALL_VARS["ang"] = degrees(atan2(ball_vx, ball_vy))
+
+            BALL_VARS["vel"] = sqrt( ball_vx ** 2 + ball_vy ** 2 )
 
         elif not mouse_pressed[2]:
             COLLIDED = False
 
-    print("{: <12.5f} {: <12.5f} {: <12.5f} {: <12.5f} {: <12.5f} {: <12.5f}".format(
+    print("{: <12.5f} {: <12.5f} {: <12.5f} {: <12.5f} {: <12.5f}".format(
             COLL_VARS["rel_ang"],
             COLL_VARS["ang"],
             COLL_VARS["vel"],
             BALL_VARS["ang"],
-            BALL_VARS["vel"],
-            HIT_ANGLE
+            BALL_VARS["vel"]
         ),
         end="\r"
     )

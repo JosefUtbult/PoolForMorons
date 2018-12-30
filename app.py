@@ -5,7 +5,7 @@ import pygame
 import logic
 import graphics
 from random import seed, randint, random, choice
-from time import time
+from time import time, sleep
 
 from threading import Thread
 
@@ -23,25 +23,32 @@ def main():
 
         # TODO TESTING
         i = 0
-        while i < 1 and random() < 0.20:
+        while i < 1 and random() < 0.1:
             choice(Pool_ball.pool_balls).apply_force(random()*1.2, random()*360)
             i += 1
         
         threads = thread_movement()
         for thread in threads:
             thread.join()
+        check_collisions()
 
 def thread_movement():
     global MOVING_PARTICLES
-    threads = []
+    threads = [Thread(target=lambda : sleep(0.02))]
+    threads[0].start()
     for particle in MOVING_PARTICLES:
         t = Thread(target=particle.move)
         threads.append(t)
         t.start()
     return threads
 
+def check_collisions():
+    global MOVING_PARTICLES
+    for mover in MOVING_PARTICLES:
+        for ball in Pool_ball.pool_balls:
+            mover.check_collision(ball)
+        
 
-    
 
 if __name__ == "__main__":
     main()
